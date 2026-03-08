@@ -29,7 +29,7 @@
 body{background:var(--bg);color:var(--ink);font-family:'DM Mono',monospace;min-height:100vh;font-size:14px;}
 
 /* NAV */
-nav{background:var(--navy);padding:0 max(14px,env(safe-area-inset-right)) 0 max(10px,env(safe-area-inset-left));display:flex;align-items:center;gap:10px;justify-content:space-between;border-bottom:3px solid var(--gold);box-shadow:0 2px 16px rgba(0,0,0,0.25);position:sticky;top:0;z-index:100;height:54px;}
+nav{background:var(--navy);padding:env(safe-area-inset-top,0) max(14px,env(safe-area-inset-right)) 0 max(10px,env(safe-area-inset-left));display:flex;align-items:center;gap:10px;justify-content:space-between;border-bottom:3px solid var(--gold);box-shadow:0 2px 16px rgba(0,0,0,0.25);position:sticky;top:0;z-index:100;height:54px;}
 .brand{font-family:'Cormorant Garamond',serif;font-size:0.95rem;font-weight:700;color:var(--gold2);}
 .nav-actions{display:flex;gap:8px;align-items:center;}
 .gs-status{font-size:0.57rem;letter-spacing:1px;padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.45);cursor:pointer;transition:all 0.15s;}
@@ -135,8 +135,9 @@ nav{background:var(--navy);padding:0 max(14px,env(safe-area-inset-right)) 0 max(
 
 .pick-type{display:inline-block;padding:3px 7px;border-radius:2px;font-size:0.56rem;letter-spacing:0.5px;text-transform:uppercase;font-weight:500;white-space:nowrap;width:100%;text-align:center;}
 .pt-0{background:rgba(27,59,106,0.12);color:var(--navy);border:1px solid rgba(27,59,106,0.2);}
-.pt-1{background:rgba(200,151,42,0.12);color:var(--gold);border:1px solid rgba(200,151,42,0.3);}
-.pt-2{background:rgba(90,112,144,0.1);color:var(--muted);border:1px solid rgba(90,112,144,0.2);}
+.pt-1{background:rgba(30,122,74,0.1);color:var(--green);border:1px solid rgba(30,122,74,0.25);}
+.special-btn{background:transparent;border:none;cursor:pointer;font-size:1rem;padding:0 4px;opacity:0.3;transition:opacity 0.15s,filter 0.15s;line-height:1;}
+.special-btn.active{opacity:1;filter:drop-shadow(0 0 3px rgba(200,151,42,0.7));}
 
 .horse-num-input{background:transparent;border:none;border-bottom:1px solid var(--border);font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-weight:700;color:var(--navy);padding:2px 4px;width:100%;outline:none;text-align:center;transition:border-color 0.15s;}
 .horse-num-input:focus{border-bottom-color:var(--navy2);}
@@ -217,6 +218,12 @@ nav{background:var(--navy);padding:0 max(14px,env(safe-area-inset-right)) 0 max(
 label{display:block;font-size:0.56rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;margin-top:13px;}
 label:first-of-type{margin-top:0;}
 input[type=text],input[type=date],input[type=number],select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:2px;color:var(--ink);font-family:'DM Mono',monospace;font-size:0.8rem;padding:8px 10px;outline:none;transition:border-color 0.15s;}
+/* pick field money inputs — fixed width, not 100% */
+.pick-money-input,.m-money-input{width:56px!important;padding:2px 4px!important;font-size:0.85rem!important;border:none!important;border-bottom:1.5px solid var(--border)!important;border-radius:0!important;background:transparent!important;font-weight:600;color:var(--navy);}
+.pick-money-input:focus,.m-money-input:focus{border-bottom-color:var(--navy2)!important;outline:none;}
+/* tighten fields grid columns */
+.pick-fields-row{display:grid;grid-template-columns:1fr 90px 90px;gap:8px;margin-top:6px;padding-top:6px;border-top:1px solid rgba(184,204,224,0.3);}
+.m-pick-fields{display:grid;grid-template-columns:1fr 80px 80px;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(184,204,224,0.3);}
 input:focus,select:focus{border-color:var(--navy2);}
 .info-box{background:var(--blue-light);border:1px solid var(--border);border-radius:3px;padding:11px 13px;font-size:0.63rem;color:var(--muted);line-height:1.8;margin-top:13px;}
 .info-box strong{color:var(--navy);}
@@ -464,7 +471,7 @@ function selectVenue(name,state){
 function hideVenueDrop(){setTimeout(()=>document.getElementById('venueDrop').classList.remove('open'),160);}
 
 // ── CONFIG ──────────────────────────────────────────
-const PICK_LABELS=['Best Chance','Value Play','Threat'];
+const PICK_LABELS=['Winner','Place'];
 const RES_ICON={
   '1st':'🏆','2nd':'🥈','3rd':'🥉','unp':'✗',null:'·'
 };
@@ -538,9 +545,8 @@ function createMeeting(){
 
 function mkRace(num){
   return{num,name:'',picks:[
-    {num:'',horse:'',type:0,result:null},
-    {num:'',horse:'',type:1,result:null},
-    {num:'',horse:'',type:2,result:null}
+    {num:'',horse:'',type:0,result:null,special:false,confidence:5,odds:null,stake:null},
+    {num:'',horse:'',type:1,result:null,special:false,confidence:5,odds:null,stake:null}
   ]};
 }
 
@@ -554,6 +560,7 @@ async function openMeeting(id){
   ['dash','today','upcoming','past'].forEach(t=>document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active',t===activeTab));
   renderSidebar();
   renderMain();
+  renderMeetingStats();
   // for past meetings, try to load from Sheets if connected
   if(m && cat==='past' && !m.gsLoaded && gsConnected()){
     toast('Loading from Sheets…');
@@ -576,7 +583,7 @@ function renderTabTotals(){
     const s=meetingStats(m);
     wins+=s.wins; placed+=s.placed; unplaced+=s.unplaced; settled+=s.settled;
   });
-  const hitRate=settled>0?Math.round(((wins+placed)/settled)*100):0;
+  const hitRate=settled>0?Math.round((placed/settled)*100):0;
 
   const el=document.getElementById('tabTotals');
   if(!el)return;
@@ -707,72 +714,183 @@ function renderMain(){
     <div class="add-race-row">
       <button class="btn btn-ghost btn-sm" onclick="addRace()">+ Add Race</button>
     </div>
+    <div id="meetingStatsPanel" style="padding:0 0 20px"></div>
   `;
+}
+
+function renderMeetingStats(){
+  const el=document.getElementById('meetingStatsPanel');
+  if(!el)return;
+  const m=meetings.find(x=>x.id===currentId);
+  if(!m){el.innerHTML='';return;}
+  const s=meetingStats(m);
+  if(!s.settled){el.style.display='none';return;}
+  el.style.display='block';
+
+  const pct=(v,d)=>d>0?Math.round((v/d)*100)+'%':'—';
+
+  const specialRow = s.specials>0 ? `
+    <tr style="border-top:2px solid var(--gold)">
+      <td style="padding:7px 10px"><span style="color:var(--gold);font-size:0.8rem">⭐ Special</span></td>
+      <td style="padding:7px 10px;text-align:center;font-weight:700;color:var(--green)">${pct(s.specialWins,s.specials)}</td>
+      <td style="padding:7px 10px;text-align:center;font-weight:700;color:var(--gold)">${pct(s.specialPlaced,s.specials)}</td>
+      <td style="padding:7px 10px;text-align:center;color:var(--muted)">${s.specials}</td>
+    </tr>` : '';
+
+  el.innerHTML=`
+    <div style="margin-top:18px;border:1px solid var(--border);border-radius:4px;overflow:hidden;box-shadow:var(--shadow)">
+      <div style="background:var(--navy);padding:8px 12px">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:700;color:var(--gold2)">Meeting Performance</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;background:var(--white)">
+        <thead>
+          <tr style="background:var(--blue-light)">
+            <th style="padding:7px 10px;text-align:left;font-size:0.55rem;letter-spacing:1px;color:var(--muted)">PICK</th>
+            <th style="padding:7px 10px;text-align:center;font-size:0.55rem;letter-spacing:1px;color:var(--muted)">WIN%</th>
+            <th style="padding:7px 10px;text-align:center;font-size:0.55rem;letter-spacing:1px;color:var(--muted)">PLACE%</th>
+            <th style="padding:7px 10px;text-align:center;font-size:0.55rem;letter-spacing:1px;color:var(--muted)">SETTLED</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 10px"><span class="pick-type pt-0">Winner</span></td>
+            <td style="padding:7px 10px;text-align:center;font-weight:700;color:var(--green)">${pct(s.winnerWins,s.winnerPicks)}</td>
+            <td style="padding:7px 10px;text-align:center;font-weight:700;color:var(--gold)">${pct(s.winnerPlaced,s.winnerPicks)}</td>
+            <td style="padding:7px 10px;text-align:center;color:var(--muted)">${s.winnerPicks}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 10px"><span class="pick-type pt-1">Place</span></td>
+            <td style="padding:7px 10px;text-align:center;color:var(--muted)">—</td>
+            <td style="padding:7px 10px;text-align:center;font-weight:700;color:var(--gold)">${pct(s.placePlaced,s.placePicks)}</td>
+            <td style="padding:7px 10px;text-align:center;color:var(--muted)">${s.placePicks}</td>
+          </tr>
+          <tr style="border-top:2px solid var(--border);background:var(--blue-light)">
+            <td style="padding:7px 10px;font-weight:700;font-size:0.65rem;letter-spacing:1px">OVERALL</td>
+            <td style="padding:7px 10px;text-align:center;font-weight:700;color:var(--green)">${pct(s.wins,s.winnerPicks)}</td>
+            <td style="padding:7px 10px;text-align:center;font-weight:700;color:var(--gold)">${pct(s.placed,s.settled)}</td>
+            <td style="padding:7px 10px;text-align:center;color:var(--muted)">${s.settled}</td>
+          </tr>
+          ${specialRow}
+        </tbody>
+      </table>
+      ${s.staked>0?`
+      <div style="border-top:2px solid var(--border);background:var(--blue-light)">
+        <div style="display:flex;gap:0;flex-wrap:wrap">
+          <div style="flex:1;padding:9px 12px;min-width:100px">
+            <div style="font-size:0.48rem;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Total Staked</div>
+            <div style="font-size:1rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:var(--navy)">$${s.staked}</div>
+          </div>
+          <div style="flex:1;padding:9px 12px;min-width:100px;border-left:1px solid var(--border)">
+            <div style="font-size:0.48rem;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Gross Return</div>
+            <div style="font-size:1rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:var(--navy)">$${s.grossReturn}</div>
+          </div>
+          <div style="flex:1;padding:9px 12px;min-width:100px;border-left:1px solid var(--border)">
+            <div style="font-size:0.48rem;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Net P&amp;L</div>
+            <div style="font-size:1rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:${s.pnl>=0?'var(--green)':'var(--red)'}"}>${s.pnl>=0?'+':''}\$${s.pnl}</div>
+          </div>
+        </div>
+      </div>`:''}
+    </div>`;
 }
 
 function summaryBarHTML(s){
   return`
     <div class="summary-chip"><div class="chip-val chip-navy">${s.total}</div><div class="chip-label">Picks</div></div>
     <div class="summary-chip"><div class="chip-val chip-green">${s.wins}</div><div class="chip-label">Wins</div></div>
-    <div class="summary-chip"><div class="chip-val chip-gold">${s.placed}</div><div class="chip-label">Placings</div></div>
+    <div class="summary-chip"><div class="chip-val chip-gold">${s.placeRate!==null?s.placeRate+'%':'—'}</div><div class="chip-label">Place%</div></div>
     <div class="summary-chip"><div class="chip-val chip-red">${s.unplaced}</div><div class="chip-label">Unplaced</div></div>
     <div class="summary-chip"><div class="chip-val chip-navy">${s.hitRate}%</div><div class="chip-label">Hit Rate</div></div>`;
 }
 
 function raceHTML(mid,race,ri){
-  const hasAny=race.picks.some(p=>p.num||p.horse);
-  const allSettled=race.picks.filter(p=>p.num||p.horse).every(p=>p.result);
+  const hasAny=race.picks.some(p=>p.num);
+  const allSettled=race.picks.filter(p=>p.num).every(p=>p.result);
   const showBadge=hasAny&&allSettled;
-  const rows=race.picks.map((pick,pi)=>{
+  const rf=raceFinanceStats(race);
+  const footerHTML=rf.staked>0?`
+    <div class="race-footer">
+      <div class="rf-item"><div class="rf-label">Staked</div><div class="rf-val">$${rf.staked}</div></div>
+      <div class="rf-item"><div class="rf-label">Return</div><div class="rf-val ${rf.grossReturn>0?'pos':''}">$${rf.grossReturn}</div></div>
+      <div class="rf-item"><div class="rf-label">P&amp;L</div><div class="rf-val ${rf.pnl>=0?'pos':'neg'}">${rf.pnl>=0?'+':''}$${rf.pnl}</div></div>
+    </div>`:'';
+  const picks=race.picks.map((pick,pi)=>{
     const res=pick.result;
-    return`<tr>
-      <td class="col-type"><span class="pick-type pt-${pi}">${PICK_LABELS[pi]}</span></td>
-      <td class="col-num">
-        <input class="horse-num-input" type="text" inputmode="numeric" placeholder="##" maxlength="3" title="Horse Number"
+    const conf=pick.confidence!=null?pick.confidence:5;
+    return`<div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="pick-type pt-${pi}">${PICK_LABELS[pi]}</span>
+        <button class="special-btn ${pick.special?'active':''}" tabindex="-1" onclick="toggleSpecial(${mid},${ri},${pi})" title="Special">⭐</button>
+        <input class="horse-num-input" type="text" inputmode="numeric" placeholder="##" maxlength="3"
           value="${esc(pick.num)}"
           onchange="updatePick(${mid},${ri},${pi},'num',this.value)"
           onblur="updatePick(${mid},${ri},${pi},'num',this.value)">
-      </td>
-      <td class="col-result">
-        <div class="result-group">
-          <button class="res-btn ${res==='1st'?'r1':''}" tabindex="-1" onclick="setResult(${mid},${ri},${pi},'1st')">1st</button>
-          <button class="res-btn ${res==='2nd'?'r2':''}" tabindex="-1" onclick="setResult(${mid},${ri},${pi},'2nd')">2nd</button>
-          <button class="res-btn ${res==='3rd'?'r3':''}" tabindex="-1" onclick="setResult(${mid},${ri},${pi},'3rd')">3rd</button>
-          <button class="res-btn ${res==='unp'?'runp':''}" tabindex="-1" onclick="setResult(${mid},${ri},${pi},'unp')">UNP</button>
-          ${res?`<button class="res-btn" onclick="setResult(${mid},${ri},${pi},null)" style="font-size:0.48rem;padding:4px 5px">✕</button>`:''}
+      </div>
+      <div class="result-group" style="margin-bottom:10px">
+        <button class="res-btn ${res==='1st'?'r1':''}" tabindex="-1" onclick="setResult(${mid},${ri},${pi},'1st')">1st</button>
+        <button class="res-btn ${res==='2nd'?'r2':''}" tabindex="-1" onclick="setResult(${mid},${ri},${pi},'2nd')">2nd</button>
+        <button class="res-btn ${res==='3rd'?'r3':''}" tabindex="-1" onclick="setResult(${mid},${ri},${pi},'3rd')">3rd</button>
+        <button class="res-btn ${res==='unp'?'runp':''}" tabindex="-1" onclick="setResult(${mid},${ri},${pi},'unp')">UNP</button>
+        ${res?`<button class="res-btn" tabindex="-1" onclick="setResult(${mid},${ri},${pi},null)" style="font-size:0.48rem;padding:4px 5px">✕</button>`:''}
+      </div>
+      <div class="pick-fields-row">
+        <div class="pick-field">
+          <label>Confidence <span class="conf-val">${conf}</span></label>
+          <input type="range" class="conf-slider" min="1" max="10" value="${conf}"
+            oninput="this.previousElementSibling.querySelector('.conf-val').textContent=this.value"
+            onchange="updatePick(${mid},${ri},${pi},'confidence',parseInt(this.value))">
         </div>
-      </td>
-    </tr>`;
+        <div class="pick-field">
+          <label>Odds</label>
+          <div class="pick-field-inner"><span class="pick-dollar">$</span>
+            <input class="pick-money-input" type="number" min="1" step="1" placeholder="—"
+              value="${pick.odds||''}"
+              onchange="updatePick(${mid},${ri},${pi},'odds',this.value?parseInt(this.value):null)"
+              onblur="updatePick(${mid},${ri},${pi},'odds',this.value?parseInt(this.value):null)">
+          </div>
+        </div>
+        <div class="pick-field">
+          <label>Stake</label>
+          <div class="pick-field-inner"><span class="pick-dollar">$</span>
+            <input class="pick-money-input" type="number" min="1" step="1" placeholder="—"
+              value="${pick.stake||''}"
+              onchange="updatePick(${mid},${ri},${pi},'stake',this.value?parseInt(this.value):null)"
+              onblur="updatePick(${mid},${ri},${pi},'stake',this.value?parseInt(this.value):null)">
+          </div>
+        </div>
+      </div>
+    </div>`;
   }).join('');
-
   return`
     <div class="race-block" id="race-${ri}">
-      <table class="picks-table">
-        <thead>
-          <tr>
-            <th class="th-race col-type">Race ${race.num}</th>
-            <th class="col-num" style="color:rgba(255,255,255,0.4);font-size:0.49rem;letter-spacing:2px;text-align:center">No.</th>
-            <th class="col-result" style="text-align:right;padding-right:12px">
-              <span class="race-settled-badge ${showBadge?'show':''}">Settled ✓</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
+      <div style="background:var(--navy);padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:700;color:var(--gold2)">Race ${race.num}</span>
+        <span class="race-settled-badge ${showBadge?'show':''}">Settled ✓</span>
+      </div>
+      ${picks}
+      ${footerHTML}
     </div>`;
 }
 
 // ── DASHBOARD ────────────────────────────────────────
 // ── MOBILE RACE HTML ─────────────────────────────────
 function mobileRaceHTML(mid,race,ri){
-  const hasAny=race.picks.some(p=>p.num||p.horse);
-  const allSettled=race.picks.filter(p=>p.num||p.horse).every(p=>p.result);
+  const hasAny=race.picks.some(p=>p.num);
+  const allSettled=race.picks.filter(p=>p.num).every(p=>p.result);
   const showBadge=hasAny&&allSettled;
+  const rf=raceFinanceStats(race);
+  const footerHTML=rf.staked>0?`
+    <div class="race-footer">
+      <div class="rf-item"><div class="rf-label">Staked</div><div class="rf-val">$${rf.staked}</div></div>
+      <div class="rf-item"><div class="rf-label">Return</div><div class="rf-val ${rf.grossReturn>0?'pos':''}">$${rf.grossReturn}</div></div>
+      <div class="rf-item"><div class="rf-label">P&amp;L</div><div class="rf-val ${rf.pnl>=0?'pos':'neg'}">${rf.pnl>=0?'+':''}$${rf.pnl}</div></div>
+    </div>`:'';
   const picks=race.picks.map((pick,pi)=>{
     const res=pick.result;
+    const conf=pick.confidence!=null?pick.confidence:5;
     return`<div class="mobile-pick">
-      <div class="mobile-pick-top"><span class="pick-type pt-${pi}">${PICK_LABELS[pi]}</span></div>
-      <div class="mobile-pick-fields">
+      <div class="mobile-pick-top">
+        <span class="pick-type pt-${pi}">${PICK_LABELS[pi]}</span>
+        <button class="special-btn ${pick.special?'active':''}" tabindex="-1" onclick="toggleSpecial(${mid},${ri},${pi})">⭐</button>
         <input class="mobile-num-input" type="text" inputmode="numeric" placeholder="##" maxlength="3"
           value="${esc(pick.num)}"
           onchange="updatePick(${mid},${ri},${pi},'num',this.value)"
@@ -783,17 +901,43 @@ function mobileRaceHTML(mid,race,ri){
         <button class="mobile-res-btn ${res==='2nd'?'r2':''}" tabindex="-1" onclick="setResult(${mid},${ri},${pi},'2nd')">2nd</button>
         <button class="mobile-res-btn ${res==='3rd'?'r3':''}" tabindex="-1" onclick="setResult(${mid},${ri},${pi},'3rd')">3rd</button>
         <button class="mobile-res-btn ${res==='unp'?'runp':''}" tabindex="-1" onclick="setResult(${mid},${ri},${pi},'unp')">UNP</button>
-        ${res?`<button class="mobile-res-btn clear" onclick="setResult(${mid},${ri},${pi},null)">x</button>`:''}
+        ${res?`<button class="mobile-res-btn clear" tabindex="-1" onclick="setResult(${mid},${ri},${pi},null)">x</button>`:''}
+      </div>
+      <div class="m-pick-fields">
+        <div class="m-pick-field">
+          <label>Confidence <strong style="color:var(--navy)">${conf}</strong></label>
+          <input type="range" class="conf-slider" min="1" max="10" value="${conf}"
+            oninput="this.previousElementSibling.querySelector('strong').textContent=this.value"
+            onchange="updatePick(${mid},${ri},${pi},'confidence',parseInt(this.value))">
+        </div>
+        <div class="m-pick-field">
+          <label>Odds</label>
+          <div style="display:flex;align-items:baseline;gap:2px"><span class="pick-dollar">$</span>
+            <input class="m-money-input" type="number" min="1" step="1" placeholder="—"
+              value="${pick.odds||''}"
+              onchange="updatePick(${mid},${ri},${pi},'odds',this.value?parseInt(this.value):null)"
+              onblur="updatePick(${mid},${ri},${pi},'odds',this.value?parseInt(this.value):null)">
+          </div>
+        </div>
+        <div class="m-pick-field">
+          <label>Stake</label>
+          <div style="display:flex;align-items:baseline;gap:2px"><span class="pick-dollar">$</span>
+            <input class="m-money-input" type="number" min="1" step="1" placeholder="—"
+              value="${pick.stake||''}"
+              onchange="updatePick(${mid},${ri},${pi},'stake',this.value?parseInt(this.value):null)"
+              onblur="updatePick(${mid},${ri},${pi},'stake',this.value?parseInt(this.value):null)">
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
   return`<div class="mobile-race-block" id="mrace-${ri}">
     <div class="mobile-race-head">
       <div class="mobile-race-num">Race ${race.num}</div>
-
       <span class="mobile-race-badge ${showBadge?'show':''}">Settled</span>
     </div>
     ${picks}
+    ${footerHTML}
   </div>`;
 }
 // ── DRAWER ───────────────────────────────────────────
@@ -833,7 +977,7 @@ function drawerItem(m){
   return`<div class="meeting-item is-${cat}${active?' active':''}" onclick="openMeeting(${m.id});closeDrawer()">
     <div class="sb-venue">${esc(m.venue)}<span style="font-size:0.56rem;color:var(--muted);font-family:'DM Mono',monospace">${m.state}</span>${cat==='today'?'<span class="today-pill">Today</span>':''}</div>
     <div class="sb-meta">${d} &middot; ${m.races.length} races</div>
-    <div class="sb-stats"><span class="sb-stat w">${s.wins}W</span><span class="sb-stat p">${s.placed}P</span><span class="sb-stat u">${s.unplaced}U</span><span class="sb-stat pct">${pct}%</span></div>
+    <div class="sb-stats"><span class="sb-stat w">${s.winRate!==null?s.winRate+'%W':'—W'}</span><span class="sb-stat p">${s.placeRate!==null?s.placeRate+'%P':'—P'}</span><span class="sb-stat u">${s.unplaced}U</span></div>
     <div class="sb-bar"><div class="sb-bar-fill" style="width:${Math.min(pct,100)}%"></div></div>
   </div>`;
 }
@@ -864,6 +1008,13 @@ function renderDashboard(){
     totPicks+=s.total;totWins+=s.wins;totPlaced+=s.placed;totUnp+=s.unplaced;totSettled+=s.settled;
   });
   const totHit=totSettled>0?Math.round(((totWins+totPlaced)/totSettled)*100):0;
+
+  // Finance totals for source meetings
+  let dayStaked=0,dayPnl=0;
+  source.forEach(m=>{dayStaked+=m.staked||0;dayPnl+=(m.pnl||0);});
+  // recalc from live stats
+  dayStaked=0;dayPnl=0;
+  source.forEach(m=>{const f=meetingFinanceStats(m);dayStaked+=f.staked;dayPnl+=f.pnl;});
 
   const today=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
@@ -947,11 +1098,23 @@ function setDashView(v){
 }
 
 // ── UPDATES ──────────────────────────────────────────
+function toggleSpecial(mid,ri,pi){
+  const m=meetings.find(x=>x.id===mid);if(!m)return;
+  m.races[ri].picks[pi].special=!m.races[ri].picks[pi].special;
+  lsSave();
+  const block=document.getElementById('race-'+ri);
+  if(block)block.outerHTML=raceHTML(mid,m.races[ri],ri);
+  const mblock=document.getElementById('mrace-'+ri);
+  if(mblock)mblock.outerHTML=mobileRaceHTML(mid,m.races[ri],ri);
+  renderMeetingStats();
+}
+
 function updatePick(mid,ri,pi,field,val){
   const m=meetings.find(x=>x.id===mid);if(!m)return;
   m.races[ri].picks[pi][field]=val.trim();lsSave();
   const bar=document.getElementById('summaryBar');
   if(bar)bar.innerHTML=summaryBarHTML(meetingStats(m));
+  renderMeetingStats();
   renderSidebar();
 }
 
@@ -971,6 +1134,7 @@ function setResult(mid,ri,pi,result){
   if(mblock)mblock.outerHTML=mobileRaceHTML(mid,m.races[ri],ri);
   const bar=document.getElementById('summaryBar');
   if(bar)bar.innerHTML=summaryBarHTML(meetingStats(m));
+  renderMeetingStats();
   renderSidebar();
 }
 
@@ -1002,15 +1166,78 @@ function deleteMeeting(id){
   toast('Meeting deleted');
 }
 
+// ── FINANCE HELPERS ──────────────────────────────────
+function raceFinanceStats(race){
+  let staked=0, grossReturn=0;
+  race.picks.forEach(pick=>{
+    if(pick.stake) staked+=pick.stake;
+    // Net profit: (odds × stake) - stake, only on settled hits
+    if(pick.odds && pick.stake && pick.result){
+      const isHit = (pick.type===0 && pick.result==='1st') // winner win
+        || (pick.result==='1st'||pick.result==='2nd'||pick.result==='3rd'); // any place
+      if(isHit) grossReturn += (pick.odds * pick.stake);
+    }
+  });
+  const profit = grossReturn - staked;
+  const pnl = grossReturn > 0 ? profit : (staked > 0 ? -staked : 0);
+  return{staked, grossReturn, profit:Math.round(profit), pnl:Math.round(pnl)};
+}
+
+function meetingFinanceStats(m){
+  let staked=0, grossReturn=0;
+  m.races.forEach(race=>{
+    const rf=raceFinanceStats(race);
+    staked+=rf.staked; grossReturn+=rf.grossReturn;
+  });
+  const profit=grossReturn-staked;
+  const pnl=staked>0?Math.round(profit):0;
+  return{staked, grossReturn:Math.round(grossReturn), profit:Math.round(profit), pnl};
+}
+
 // ── STATS ────────────────────────────────────────────
 function meetingStats(m){
-  const all=m.races.flatMap(r=>r.picks).filter(p=>p.num||p.horse);
-  const settled=all.filter(p=>p.result);
-  const wins=all.filter(p=>p.result==='1st').length;
-  const placed=all.filter(p=>p.result==='2nd'||p.result==='3rd').length;
-  const unplaced=all.filter(p=>p.result==='unp').length;
-  const hitRate=settled.length>0?Math.round(((wins+placed)/settled.length)*100):0;
-  return{total:all.length,settled:settled.length,wins,placed,unplaced,hitRate};
+  // All picks with a number entered
+  const all = m.races.flatMap(r=>r.picks).filter(p=>p.num);
+  const settled = all.filter(p=>p.result);
+
+  // Winner picks (type 0) — win = 1st, place = top 3
+  const winnerPicks   = settled.filter(p=>p.type===0);
+  const winnerWins    = winnerPicks.filter(p=>p.result==='1st').length;
+  const winnerPlaced  = winnerPicks.filter(p=>p.result==='1st'||p.result==='2nd'||p.result==='3rd').length;
+
+  // Place picks (type 1) — place = top 3
+  const placePicks    = settled.filter(p=>p.type===1);
+  const placePlaced   = placePicks.filter(p=>p.result==='1st'||p.result==='2nd'||p.result==='3rd').length;
+
+  // Overall
+  const totalWins     = winnerWins;
+  const totalPlaced   = winnerPlaced + placePlaced; // all top-3 finishes
+  const totalUnplaced = settled.filter(p=>p.result==='unp').length;
+
+  // Win rate = winner picks that finished 1st / settled winner picks
+  const winRate  = winnerPicks.length>0 ? Math.round((winnerWins/winnerPicks.length)*100) : null;
+  // Place rate = all picks finishing top 3 / all settled picks
+  const placeRate = settled.length>0 ? Math.round((totalPlaced/settled.length)*100) : null;
+  // Hit rate = overall (same as place rate in this model)
+  const hitRate  = placeRate;
+
+  // Specials
+  const specials        = settled.filter(p=>p.special);
+  const specialWins     = specials.filter(p=>p.result==='1st').length;
+  const specialPlaced   = specials.filter(p=>p.result==='1st'||p.result==='2nd'||p.result==='3rd').length;
+  const specialWinRate  = specials.length>0 ? Math.round((specialWins/specials.length)*100) : null;
+  const specialPlaceRate= specials.length>0 ? Math.round((specialPlaced/specials.length)*100) : null;
+
+  const finance=meetingFinanceStats(m);
+  return{
+    total:all.length, settled:settled.length,
+    wins:totalWins, placed:totalPlaced, unplaced:totalUnplaced,
+    winRate, placeRate, hitRate,
+    winnerPicks:winnerPicks.length, winnerWins, winnerPlaced,
+    placePicks:placePicks.length, placePlaced,
+    specials:specials.length, specialWins, specialPlaced, specialWinRate, specialPlaceRate,
+    staked:finance.staked, grossReturn:finance.grossReturn, profit:finance.profit, pnl:finance.pnl
+  };
 }
 
 // ── EXPORT ───────────────────────────────────────────
@@ -1157,7 +1384,7 @@ async function gsSyncAll() {
     meetings.forEach(m => {
       m.races.forEach(race => {
         race.picks.forEach((pick, pi) => {
-          pRows.push([m.id, race.num, race.name||'', PICK_LABELS[pi], pick.num||'', pick.horse||'', pick.result||'']);
+          pRows.push([m.id, race.num, race.name||'', PICK_LABELS[pi], pick.num||'', pick.horse||'', pick.result||'', pick.special?'1':'', pick.confidence||5, pick.odds||'', pick.stake||'']);
         });
       });
     });
@@ -1426,7 +1653,7 @@ function copyTips(mid) {
         : pick.result === 'unp' ? '✗ Unplaced'
         : '';
       const resStr = res ? `  →  ${res}` : '';
-      lines.push(`  ${PICK_LABELS[pi]}: #${pick.num}${resStr}`);
+      lines.push(`  ${PICK_LABELS[pi]}${pick.special?' ⭐':''}: #${pick.num}${resStr}`);
     });
     lines.push('');
   });
